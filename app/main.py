@@ -32,8 +32,9 @@ async def create_short_link(link: schemas.LinkCreate, request: Request, db: Asyn
     }
 
 @app.get("/{short_code}")
-async def redirect_to_long_url(shortcode: str, db: AsyncSession = Depends(get_db)):
-    db_link = await crud.getLinkByShortCode(db, shortcode=shortcode)
+async def redirect_to_long_url(short_code: str, db: AsyncSession = Depends(get_db)):
+    print("saturday debug greatness")
+    db_link = await crud.getLinkByShortCode(db, shortCode=short_code)
     if db_link is None:
         raise HTTPException(status_code=404, detail="URL not found")
     
