@@ -1,1 +1,2 @@
-1. The short link logic doesn't looks right - let's research about it
+1. The short link logic doesn't looks right - let's research about it - fixed (8nov)
+2. Won't want any long url to be processed more than one. - done(10Nov)
