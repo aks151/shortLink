@@ -18,3 +18,9 @@ async def createLink(db: AsyncSession, shortCode: str, longUrl: str):
     await db.commit()
     await db.refresh(new_link)
     return new_link
+
+async def checkDbForLink(db: AsyncSession, long_Url:str):
+
+    result = await db.execute(select(models.Link).filter(models.Link.longUrl == long_Url)) # here what to do, tell me the concepts too 
+    return result.scalars().first()
+

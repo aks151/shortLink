@@ -20,11 +20,21 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/api/v1/shorten", response_model=schemas.LinkResponse)
 async def create_short_link(link: schemas.LinkCreate, request: Request, db: AsyncSession = Depends(get_db)):
-    shortcode = shortuuid.uuid()[:7]
-
-    db_link = await crud.createLink(db=db, shortCode=shortcode, longUrl=str(link.longUrl))
-
+    # with every post call we are doing the creation process, we should not create new short code if it is present already in the db
+    
     base_url = str(request.base_url)
+
+    existingLink = await crud.checkDbForLink(db=db, long_Url = str(link.longUrl))
+
+    if(existingLink != None):
+        print('longURL was already parsed')
+        return {
+            "longUrl": str(existingLink.longUrl),
+            "shortLink": f"{base_url}{existingLink.shortCode}"
+        }
+    
+    shortcode = shortuuid.uuid()[:7]
+    db_link = await crud.createLink(db=db, shortCode=shortcode, longUrl=str(link.longUrl))
 
     return {
         "longUrl": db_link.longUrl,
