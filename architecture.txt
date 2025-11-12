@@ -1,0 +1,3 @@
+1. Discussion point: will the same long link be processed multiple time? we are storing the short link with long link, should i search the column to check if the long link is there or not 
+or there should be other system consideration for it
+
