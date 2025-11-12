@@ -6,28 +6,60 @@ from contextlib import asynccontextmanager
 
 from . import models, schemas, crud
 from .database import engine, get_db
+import redis.asyncio as redis
 
 
 # models.Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    print("Application Startup...")
     async with engine.begin() as conn:
         await conn.run_sync(models.Base.metadata.create_all)
+    
+    global redis_client
+    redis_client = redis.from_url("redis://localhost", decode_responses=True)
+    try:
+        await redis_client.ping()
+        print("Connected to Redis successfully")
+    except redis.exceptions.ConnectionError as e:
+        print(f"Could not connect to Redis: {e}")
+        redis_client = None
     yield
 
+    print("Application Shutdown...")
+    if redis_client:
+        await redis_client.close()
+        print("Redis connection closed.")
+
 app = FastAPI(lifespan=lifespan)
+
+redisClient = None
 
 @app.post("/api/v1/shorten", response_model=schemas.LinkResponse)
 async def create_short_link(link: schemas.LinkCreate, request: Request, db: AsyncSession = Depends(get_db)):
     # with every post call we are doing the creation process, we should not create new short code if it is present already in the db
-    
+
+    cacheKey = str(link.longUrl)
     base_url = str(request.base_url)
+
+    if redis_client:
+        cachedShortLink = await redis_client.get(cacheKey)
+        if cachedShortLink:
+            print("Cache hit!")
+            return {
+            "longUrl": str(cacheKey),
+            "shortLink": f"{base_url}{cachedShortLink}"
+            }
+        
+        print("Cache Miss")
+
 
     existingLink = await crud.checkDbForLink(db=db, long_Url = str(link.longUrl))
 
     if(existingLink != None):
         print('longURL was already parsed')
+        await redis_client.set(cacheKey, existingLink.shortCode)
         return {
             "longUrl": str(existingLink.longUrl),
             "shortLink": f"{base_url}{existingLink.shortCode}"
@@ -44,8 +76,20 @@ async def create_short_link(link: schemas.LinkCreate, request: Request, db: Asyn
 @app.get("/{short_code}")
 async def redirect_to_long_url(short_code: str, db: AsyncSession = Depends(get_db)):
     print("saturday debug greatness")
+    cacheKey = short_code
+    if redis_client:
+        cachedLink = await redis_client.get(cacheKey)
+
+        if cachedLink:
+            print("Cache Hit!")
+            return RedirectResponse(url=cachedLink)
+        
+    print("Cache Miss!")
+
+
     db_link = await crud.getLinkByShortCode(db, shortCode=short_code)
     if db_link is None:
         raise HTTPException(status_code=404, detail="URL not found")
     
+    await redis_client.set(cacheKey, )
     return RedirectResponse(url=db_link.longUrl)
