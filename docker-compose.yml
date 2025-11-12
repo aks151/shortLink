@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  web:
+    # Build the container image using the Dockerfile in the current directory
+    build: .
+    # Map port 8000 on your host machine to port 8000 in the container
+    ports:
+      - "8000:8000"
+    # Mount your local 'app' directory into the container.
+    # This allows for live-reloading of code changes without rebuilding the image.
+    volumes:
+      - ./app:/app/app
+    # Load environment variables from your local .env file into the container
+    env_file:
+      - ./.env
+    # This setting is crucial: it allows the container to connect to services
+    # (like your database) running on your host machine via the special
+    # hostname "host.docker.internal".
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
