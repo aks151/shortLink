@@ -51,6 +51,31 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to the URL Shortener API!",
+        "description": "This API allows you to shorten long URLs.",
+        "usage": {
+            "create_short_link": {
+                "method": "POST",
+                "path": "/api/v1/shorten",
+                "body": {
+                    "longUrl": "string (the URL you want to shorten)"
+                },
+                "response": {
+                    "longUrl": "string",
+                    "shortLink": "string"
+                }
+            },
+            "redirect_to_long_url": {
+                "method": "GET",
+                "path": "/{short_code}",
+                "description": "Redirects to the original long URL."
+            }
+        }
+    }
+
 @app.post("/api/v1/shorten", response_model=schemas.LinkResponse)
 async def create_short_link(link: schemas.LinkCreate, request: Request, db: AsyncSession = Depends(get_db)):
     cacheKey = str(link.longUrl)
