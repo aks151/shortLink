@@ -23,7 +23,8 @@ redis_client = None
 async def lifespan(app: FastAPI):
     print("Application Startup...")
     async with engine.begin() as conn:
-        await conn.run_sync(models.Base.metadata.create_all)
+        # await conn.run_sync(models.Base.metadata.create_all)
+        pass
     
     global redis_client
     if REDIS_URL:
@@ -87,6 +88,7 @@ async def create_short_link(link: schemas.LinkCreate, request: Request, db: Asyn
 @app.get("/{short_code}")
 async def redirect_to_long_url(short_code: str, db: AsyncSession = Depends(get_db)):
     cacheKey = short_code
+    print("Dummy Commit")
     if redis_client:
         cachedLink = await redis_client.get(cacheKey)
         if cachedLink:
