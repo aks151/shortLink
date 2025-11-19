@@ -1,9 +1,13 @@
+import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from . import models
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 async def getLinkByShortCode(db: AsyncSession, shortCode: str):
-    print("getLinkByShortCode at crud.py")
+    logging.info("getLinkByShortCode at crud.py")
 
     result = await db.execute(select(models.Link).filter(models.Link.shortCode == shortCode))
     return result.scalars().first()
